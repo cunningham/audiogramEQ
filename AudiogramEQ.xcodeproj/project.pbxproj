@@ -1,0 +1,409 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		66D984B7A3874A82A086BD8B /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93AE47926E34BE3AF3CEA0F /* AppState.swift */; };
+		2BC6344515EE4D0B84A5FC4E /* AudiogramEQApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90A60A60ECC4F5E82A5F0D7 /* AudiogramEQApp.swift */; };
+		6144807DB8504DA2B916F953 /* Audiogram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63015D73AF834E6EB06CC80B /* Audiogram.swift */; };
+		1761DEC33E4446E288E164D0 /* EQPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5897E226874177A2170C24 /* EQPreset.swift */; };
+		297F4C1EADDB4EDABA08155D /* EQProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9BC75413C54FB1BE73617A /* EQProfile.swift */; };
+		617D2E0EC62D474E9D5DD685 /* FrequencyResponseCurve.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03615A4AD4D496EB0C6D3CA /* FrequencyResponseCurve.swift */; };
+		863CCD738B874F3B9AD6FD93 /* AudiogramOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0175553ED94549ABA5AA95AC /* AudiogramOCRService.swift */; };
+		FCBD3AE437404E1DAD10F156 /* DeviceResponseParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2279F002167746C397100B1A /* DeviceResponseParser.swift */; };
+		9E9A5CC122E248DA97F6A4E4 /* EQCurveCombiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6E99682F244E2B8770ED8C /* EQCurveCombiner.swift */; };
+		CEDE89E7407A43A79BB8B405 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8383BE6CF74F9584FF5560 /* ExportService.swift */; };
+		DC1DE20AB1E444FE995981B4 /* HearingCompensationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA0053119B5487AA54925CA /* HearingCompensationService.swift */; };
+		0C556587823B4B55A5321984 /* PDFDocumentLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D83EAFC26F84AF2939B2786 /* PDFDocumentLoader.swift */; };
+		BACB43F85FBF4ED7982EE418 /* ParametricEQFitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB039F02EBC427BB1F6854C /* ParametricEQFitter.swift */; };
+		22CCBAD7D1804AC294DC35EC /* PresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1099D2A909C9403DAC99CFA8 /* PresetStore.swift */; };
+		AFA0DC6DB6874302858A5877 /* TextFileDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096547773F944676BC54705B /* TextFileDocument.swift */; };
+		E5391716449D490AB6DF13E6 /* AudiogramChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBE72149DA949B7989ABE88 /* AudiogramChartView.swift */; };
+		314D8761AA244EA899BAB4B0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4999F3B3EB4E49BBBE5061 /* ContentView.swift */; };
+		47A1BA08D4FA42FCBC678CB6 /* DeviceResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF044F8BFA74BD8B6815E0C /* DeviceResponseView.swift */; };
+		F14A9F35392942A3BDCF2209 /* ImportAudiogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 308AB1DDD7694B52B6DB8184 /* ImportAudiogramView.swift */; };
+		2D07C950067E4FFB825362CB /* ManualInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCE5A179B546CE84DBD48E /* ManualInputView.swift */; };
+		ED537EE322234B3091191895 /* EQResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811F75C60D1E4CF1883D0EB0 /* EQResultsView.swift */; };
+		CBE8281B9C1E47A6B08B5431 /* PresetManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4556AB488B7549F3A92A0E45 /* PresetManagementView.swift */; };
+		F36F84BF355746F5A9CEB4CE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6DA24B602EE435D8C5AB819 /* SettingsView.swift */; };
+		B092F2851AE9496BADC97E7F /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB265ABEC6804F0387D4B26C /* SidebarView.swift */; };
+		2A0D158A022743C198ED406B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66B93B7C170E4899B64B0BEB /* Assets.xcassets */; };
+		D3476C1F18EE42BBB86B7F90 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = E1FB07388AC14DFBBDF4B07F /* Preview Content */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		79AC9AEB86F14255A9037C04 /* AudiogramEQ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudiogramEQ.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E93AE47926E34BE3AF3CEA0F /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppState.swift"; sourceTree = "<group>"; };
+		F90A60A60ECC4F5E82A5F0D7 /* AudiogramEQApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudiogramEQApp.swift"; sourceTree = "<group>"; };
+		63015D73AF834E6EB06CC80B /* Audiogram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Audiogram.swift"; sourceTree = "<group>"; };
+		7E5897E226874177A2170C24 /* EQPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EQPreset.swift"; sourceTree = "<group>"; };
+		7A9BC75413C54FB1BE73617A /* EQProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EQProfile.swift"; sourceTree = "<group>"; };
+		D03615A4AD4D496EB0C6D3CA /* FrequencyResponseCurve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FrequencyResponseCurve.swift"; sourceTree = "<group>"; };
+		0175553ED94549ABA5AA95AC /* AudiogramOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudiogramOCRService.swift"; sourceTree = "<group>"; };
+		2279F002167746C397100B1A /* DeviceResponseParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceResponseParser.swift"; sourceTree = "<group>"; };
+		7B6E99682F244E2B8770ED8C /* EQCurveCombiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EQCurveCombiner.swift"; sourceTree = "<group>"; };
+		4F8383BE6CF74F9584FF5560 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExportService.swift"; sourceTree = "<group>"; };
+		BAA0053119B5487AA54925CA /* HearingCompensationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HearingCompensationService.swift"; sourceTree = "<group>"; };
+		3D83EAFC26F84AF2939B2786 /* PDFDocumentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PDFDocumentLoader.swift"; sourceTree = "<group>"; };
+		CAB039F02EBC427BB1F6854C /* ParametricEQFitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ParametricEQFitter.swift"; sourceTree = "<group>"; };
+		1099D2A909C9403DAC99CFA8 /* PresetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PresetStore.swift"; sourceTree = "<group>"; };
+		096547773F944676BC54705B /* TextFileDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TextFileDocument.swift"; sourceTree = "<group>"; };
+		6FBE72149DA949B7989ABE88 /* AudiogramChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudiogramChartView.swift"; sourceTree = "<group>"; };
+		AB4999F3B3EB4E49BBBE5061 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
+		BAF044F8BFA74BD8B6815E0C /* DeviceResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceResponseView.swift"; sourceTree = "<group>"; };
+		308AB1DDD7694B52B6DB8184 /* ImportAudiogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ImportAudiogramView.swift"; sourceTree = "<group>"; };
+		24DCE5A179B546CE84DBD48E /* ManualInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ManualInputView.swift"; sourceTree = "<group>"; };
+		811F75C60D1E4CF1883D0EB0 /* EQResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EQResultsView.swift"; sourceTree = "<group>"; };
+		4556AB488B7549F3A92A0E45 /* PresetManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PresetManagementView.swift"; sourceTree = "<group>"; };
+		A6DA24B602EE435D8C5AB819 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
+		CB265ABEC6804F0387D4B26C /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SidebarView.swift"; sourceTree = "<group>"; };
+		66B93B7C170E4899B64B0BEB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+		E1FB07388AC14DFBBDF4B07F /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
+		98D7250080F04C12B68AC3D2 /* AudiogramEQ.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AudiogramEQ.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		33AE94BD4E1B43B18279CF8F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		00A8AAE6B9884D65939852AC = {
+			isa = PBXGroup;
+			children = (
+				C89C497B8CD14F88A94D0166 /* AudiogramEQ */,
+				51904ECFADED445BBEE75FCC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		51904ECFADED445BBEE75FCC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				79AC9AEB86F14255A9037C04 /* AudiogramEQ.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C89C497B8CD14F88A94D0166 /* AudiogramEQ */ = {
+			isa = PBXGroup;
+			children = (
+				E93AE47926E34BE3AF3CEA0F /* AppState.swift */,
+				F90A60A60ECC4F5E82A5F0D7 /* AudiogramEQApp.swift */,
+				98D7250080F04C12B68AC3D2 /* AudiogramEQ.entitlements */,
+				87EC37998B6D4FC193A66704 /* Models */,
+				115C88A375E346C69A154FCE /* Views */,
+				36B0DBA810954A649054A878 /* Services */,
+				FAC1228C578544C58081E2A1 /* Utilities */,
+				385FA94D90FA4BF89EDF2621 /* Resources */,
+			);
+			path = AudiogramEQ;
+			sourceTree = "<group>";
+		};
+		87EC37998B6D4FC193A66704 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				63015D73AF834E6EB06CC80B /* Audiogram.swift */,
+				7E5897E226874177A2170C24 /* EQPreset.swift */,
+				7A9BC75413C54FB1BE73617A /* EQProfile.swift */,
+				D03615A4AD4D496EB0C6D3CA /* FrequencyResponseCurve.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		115C88A375E346C69A154FCE /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AB4999F3B3EB4E49BBBE5061 /* ContentView.swift */,
+				BAF044F8BFA74BD8B6815E0C /* DeviceResponseView.swift */,
+				24DCE5A179B546CE84DBD48E /* ManualInputView.swift */,
+				A6DA24B602EE435D8C5AB819 /* SettingsView.swift */,
+				CB265ABEC6804F0387D4B26C /* SidebarView.swift */,
+				794609DE3C5746CE91888CAD /* Components */,
+				7CCB122AF2064817BF313CE8 /* Import */,
+				49D188F56827469780ED928C /* Results */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		794609DE3C5746CE91888CAD /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				6FBE72149DA949B7989ABE88 /* AudiogramChartView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		7CCB122AF2064817BF313CE8 /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				308AB1DDD7694B52B6DB8184 /* ImportAudiogramView.swift */,
+			);
+			path = Import;
+			sourceTree = "<group>";
+		};
+		49D188F56827469780ED928C /* Results */ = {
+			isa = PBXGroup;
+			children = (
+				811F75C60D1E4CF1883D0EB0 /* EQResultsView.swift */,
+				4556AB488B7549F3A92A0E45 /* PresetManagementView.swift */,
+			);
+			path = Results;
+			sourceTree = "<group>";
+		};
+		36B0DBA810954A649054A878 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				0175553ED94549ABA5AA95AC /* AudiogramOCRService.swift */,
+				2279F002167746C397100B1A /* DeviceResponseParser.swift */,
+				7B6E99682F244E2B8770ED8C /* EQCurveCombiner.swift */,
+				4F8383BE6CF74F9584FF5560 /* ExportService.swift */,
+				BAA0053119B5487AA54925CA /* HearingCompensationService.swift */,
+				3D83EAFC26F84AF2939B2786 /* PDFDocumentLoader.swift */,
+				CAB039F02EBC427BB1F6854C /* ParametricEQFitter.swift */,
+				1099D2A909C9403DAC99CFA8 /* PresetStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		FAC1228C578544C58081E2A1 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				096547773F944676BC54705B /* TextFileDocument.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		385FA94D90FA4BF89EDF2621 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				66B93B7C170E4899B64B0BEB /* Assets.xcassets */,
+				E1FB07388AC14DFBBDF4B07F /* Preview Content */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7893296F4B844D448C6DCFFB /* AudiogramEQ */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2C18D0BF9684C428CBE533D /* Build configuration list for PBXNativeTarget "AudiogramEQ" */;
+			buildPhases = (
+				AE1BA926F36945619524FC48 /* Sources */,
+				33AE94BD4E1B43B18279CF8F /* Frameworks */,
+				39C369FE069E4D489EA4E95F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AudiogramEQ;
+			productName = AudiogramEQ;
+			productReference = 79AC9AEB86F14255A9037C04 /* AudiogramEQ.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5E80980F160342FE964E6CDD /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = D167ED69FA7C4059979F1602 /* Build configuration list for PBXProject "AudiogramEQ" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 00A8AAE6B9884D65939852AC;
+			productRefGroup = 51904ECFADED445BBEE75FCC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7893296F4B844D448C6DCFFB /* AudiogramEQ */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		39C369FE069E4D489EA4E95F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A0D158A022743C198ED406B /* Assets.xcassets in Resources */,
+				D3476C1F18EE42BBB86B7F90 /* Preview Content in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AE1BA926F36945619524FC48 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				66D984B7A3874A82A086BD8B /* AppState.swift in Sources */,
+				2BC6344515EE4D0B84A5FC4E /* AudiogramEQApp.swift in Sources */,
+				6144807DB8504DA2B916F953 /* Audiogram.swift in Sources */,
+				1761DEC33E4446E288E164D0 /* EQPreset.swift in Sources */,
+				297F4C1EADDB4EDABA08155D /* EQProfile.swift in Sources */,
+				617D2E0EC62D474E9D5DD685 /* FrequencyResponseCurve.swift in Sources */,
+				863CCD738B874F3B9AD6FD93 /* AudiogramOCRService.swift in Sources */,
+				FCBD3AE437404E1DAD10F156 /* DeviceResponseParser.swift in Sources */,
+				9E9A5CC122E248DA97F6A4E4 /* EQCurveCombiner.swift in Sources */,
+				CEDE89E7407A43A79BB8B405 /* ExportService.swift in Sources */,
+				DC1DE20AB1E444FE995981B4 /* HearingCompensationService.swift in Sources */,
+				0C556587823B4B55A5321984 /* PDFDocumentLoader.swift in Sources */,
+				BACB43F85FBF4ED7982EE418 /* ParametricEQFitter.swift in Sources */,
+				22CCBAD7D1804AC294DC35EC /* PresetStore.swift in Sources */,
+				AFA0DC6DB6874302858A5877 /* TextFileDocument.swift in Sources */,
+				E5391716449D490AB6DF13E6 /* AudiogramChartView.swift in Sources */,
+				314D8761AA244EA899BAB4B0 /* ContentView.swift in Sources */,
+				47A1BA08D4FA42FCBC678CB6 /* DeviceResponseView.swift in Sources */,
+				F14A9F35392942A3BDCF2209 /* ImportAudiogramView.swift in Sources */,
+				2D07C950067E4FFB825362CB /* ManualInputView.swift in Sources */,
+				ED537EE322234B3091191895 /* EQResultsView.swift in Sources */,
+				CBE8281B9C1E47A6B08B5431 /* PresetManagementView.swift in Sources */,
+				F36F84BF355746F5A9CEB4CE /* SettingsView.swift in Sources */,
+				B092F2851AE9496BADC97E7F /* SidebarView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F69FFFB4562D4FC79D88A5AD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		046DA9DE2DA84C91B52FE924 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		62F4DFB6846A4416AD1AC3A8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AudiogramEQ/AudiogramEQ.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AudiogramEQ/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.audiogrameq.AudiogramEQ;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		F697C5F1BD6E47118094C672 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AudiogramEQ/AudiogramEQ.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AudiogramEQ/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.audiogrameq.AudiogramEQ;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D167ED69FA7C4059979F1602 /* Build configuration list for PBXProject "AudiogramEQ" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F69FFFB4562D4FC79D88A5AD /* Debug */,
+				046DA9DE2DA84C91B52FE924 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E2C18D0BF9684C428CBE533D /* Build configuration list for PBXNativeTarget "AudiogramEQ" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				62F4DFB6846A4416AD1AC3A8 /* Debug */,
+				F697C5F1BD6E47118094C672 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5E80980F160342FE964E6CDD /* Project object */;
+}
