@@ -28,7 +28,23 @@ struct ManualInputView: View {
                     .buttonStyle(.borderedProminent)
                 } else {
                     ScrollView {
-                        VStack(spacing: 12) {
+                        VStack(spacing: 8) {
+                            // Column headers
+                            HStack(spacing: 12) {
+                                Text("Freq")
+                                    .frame(width: 50, alignment: .trailing)
+                                Text("")
+                                    .frame(width: 24)
+                                Text("Threshold")
+                                    .frame(maxWidth: .infinity)
+                                Text("dB HL")
+                                    .frame(width: 65)
+                                Text("")
+                                    .frame(width: 50)
+                            }
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
                             ForEach(AudiometricFrequency.allCases, id: \.self) { freq in
                                 FrequencyThresholdRow(
                                     frequency: freq,
@@ -58,12 +74,36 @@ struct ManualInputView: View {
                 }
             }
             .padding()
-            .frame(minWidth: 320, idealWidth: 400)
+            .frame(minWidth: 320, idealWidth: 420)
 
-            // Right panel: audiogram chart
-            AudiogramChartView(audiogram: appState.audiogram)
-                .padding()
-                .frame(minWidth: 400)
+            // Right panel: interactive audiogram chart
+            AudiogramChartView(
+                audiogram: appState.audiogram,
+                interactiveEar: selectedEar,
+                onPlotPoint: { frequency, dbHL in
+                    plotPoint(frequency: frequency, dbHL: dbHL)
+                }
+            )
+            .padding()
+            .frame(minWidth: 400)
+        }
+    }
+
+    private func plotPoint(frequency: AudiometricFrequency, dbHL: Double) {
+        // Ensure audiogram is initialized
+        if appState.audiogram.leftEar.isEmpty {
+            appState.audiogram = .blank()
+        }
+
+        switch selectedEar {
+        case .left:
+            if let idx = appState.audiogram.leftEar.firstIndex(where: { $0.frequency == frequency }) {
+                appState.audiogram.leftEar[idx] = HearingThreshold(frequency: frequency, thresholdDBHL: dbHL)
+            }
+        case .right:
+            if let idx = appState.audiogram.rightEar.firstIndex(where: { $0.frequency == frequency }) {
+                appState.audiogram.rightEar[idx] = HearingThreshold(frequency: frequency, thresholdDBHL: dbHL)
+            }
         }
     }
 
@@ -116,9 +156,11 @@ struct FrequencyThresholdRow: View {
     let frequency: AudiometricFrequency
     @Binding var threshold: Double
     let ear: Ear
+    @State private var textValue: String = ""
+    @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             Text(frequency.displayLabel)
                 .font(.headline.monospacedDigit())
                 .frame(width: 50, alignment: .trailing)
@@ -132,12 +174,37 @@ struct FrequencyThresholdRow: View {
             }
             .tint(ear == .left ? .blue : .red)
 
-            Text("\(Int(threshold)) dB")
-                .font(.body.monospacedDigit())
-                .frame(width: 60, alignment: .trailing)
+            // Direct text entry field
+            TextField("dB", text: $textValue)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 65)
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+                .focused($isTextFieldFocused)
+                .onSubmit { commitTextValue() }
+                .onChange(of: isTextFieldFocused) { _, focused in
+                    if !focused { commitTextValue() }
+                }
 
             Stepper("", value: $threshold, in: -10...120, step: 5)
                 .labelsHidden()
         }
+        .onAppear { textValue = formatDB(threshold) }
+        .onChange(of: threshold) { _, newValue in
+            if !isTextFieldFocused {
+                textValue = formatDB(newValue)
+            }
+        }
+    }
+
+    private func commitTextValue() {
+        if let value = Double(textValue.trimmingCharacters(in: .whitespaces)) {
+            threshold = min(max(value, -10), 120)
+        }
+        textValue = formatDB(threshold)
+    }
+
+    private func formatDB(_ value: Double) -> String {
+        String(format: "%.0f", value)
     }
 }
