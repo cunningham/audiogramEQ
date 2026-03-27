@@ -58,7 +58,8 @@ struct AudiogramChartView: View {
             ForEach(audiogram.rightEar) { threshold in
                 LineMark(
                     x: .value("Frequency", log2(threshold.frequency.rawValue)),
-                    y: .value("dB HL", threshold.thresholdDBHL)
+                    y: .value("dB HL", threshold.thresholdDBHL),
+                    series: .value("Ear", "Right")
                 )
                 .foregroundStyle(.red)
                 .interpolationMethod(.catmullRom)
@@ -74,7 +75,8 @@ struct AudiogramChartView: View {
             ForEach(audiogram.leftEar) { threshold in
                 LineMark(
                     x: .value("Frequency", log2(threshold.frequency.rawValue)),
-                    y: .value("dB HL", threshold.thresholdDBHL)
+                    y: .value("dB HL", threshold.thresholdDBHL),
+                    series: .value("Ear", "Left")
                 )
                 .foregroundStyle(.blue)
                 .interpolationMethod(.catmullRom)

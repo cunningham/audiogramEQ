@@ -14,12 +14,13 @@ struct ParametricEQFitter {
         targetCurve: [FRPoint],
         bandCount: Int = 10,
         maxGainDB: Double = 20.0,
-        iterations: Int = 50
+        iterations: Int = 50,
+        hasDeviceResponse: Bool = false
     ) -> EQProfile {
         guard !targetCurve.isEmpty else { return EQProfile() }
 
-        // Step 1: Find the most significant peaks and dips in the target curve
-        var bands = placeBands(on: targetCurve, count: bandCount, maxGainDB: maxGainDB)
+        // Step 1: Place initial bands at key frequencies
+        var bands = placeBands(on: targetCurve, count: bandCount, maxGainDB: maxGainDB, hasDeviceResponse: hasDeviceResponse)
 
         // Step 2: Iteratively refine band parameters
         for _ in 0..<iterations {
@@ -45,78 +46,95 @@ struct ParametricEQFitter {
         return EQProfile(bands: bands, globalGainDB: preampGain)
     }
 
-    /// Place initial bands at the most significant deviation frequencies
-    private func placeBands(on target: [FRPoint], count: Int, maxGainDB: Double) -> [EQBand] {
+    /// Place initial bands at audiogram frequencies, plus extended range when device response is present
+    private func placeBands(on target: [FRPoint], count: Int, maxGainDB: Double, hasDeviceResponse: Bool) -> [EQBand] {
         guard target.count >= 2 else { return [] }
 
-        // Find local extrema (peaks and dips)
-        var extrema: [(index: Int, magnitude: Double)] = []
+        // Use audiogram frequencies as the primary band centers
+        let audiogramFreqs = AudiometricFrequency.allCases.map { $0.rawValue }
 
-        for i in 1..<(target.count - 1) {
-            let prev = target[i - 1].decibelSPL
-            let curr = target[i].decibelSPL
-            let next = target[i + 1].decibelSPL
+        // Extended frequencies outside audiogram range for device response compensation
+        let extendedFreqs: [Double] = hasDeviceResponse
+            ? [20, 32, 63, 125, 10000, 12500, 16000, 20000]
+            : []
 
-            let isPeak = curr > prev && curr > next
-            let isDip = curr < prev && curr < next
-            let isSignificant = abs(curr) > 1.0
+        // Combine: audiogram freqs first, then extended freqs ranked by significance
+        let coreFreqs = audiogramFreqs
+        let rankedExtended = extendedFreqs.map { freq -> (Double, Double) in
+            let gain = interpolateTarget(at: freq, in: target)
+            return (freq, abs(gain))
+        }.sorted { $0.1 > $1.1 }
 
-            if (isPeak || isDip) && isSignificant {
-                extrema.append((i, abs(curr)))
+        let candidateFreqs: [Double]
+        if count <= coreFreqs.count {
+            // Pick the most significant audiogram frequencies
+            let ranked = coreFreqs.map { freq -> (Double, Double) in
+                let gain = interpolateTarget(at: freq, in: target)
+                return (freq, abs(gain))
+            }.sorted { $0.1 > $1.1 }
+            candidateFreqs = Array(ranked.prefix(count)).map(\.0).sorted()
+        } else {
+            // Use all audiogram frequencies, then fill with extended and evenly-spaced extras
+            var freqs = coreFreqs
+
+            // Add extended frequencies up to the band count
+            for (freq, _) in rankedExtended {
+                if freqs.count >= count { break }
+                let minDist = freqs.map { abs(log10($0) - log10(freq)) }.min() ?? 1.0
+                if minDist > 0.05 {
+                    freqs.append(freq)
+                }
             }
-        }
 
-        // Sort by magnitude (most significant first)
-        extrema.sort { $0.magnitude > $1.magnitude }
+            // If still not enough, distribute remaining evenly across the target range
+            if freqs.count < count {
+                let remaining = count - freqs.count
+                let logMin = log10(target.first!.frequencyHz)
+                let logMax = log10(target.last!.frequencyHz)
 
-        // Take top N extrema, ensuring minimum frequency spacing
-        var selectedIndices: [Int] = []
-        let minLogSpacing = 0.15 // minimum ~0.15 octave spacing
-
-        for ext in extrema {
-            let logFreq = log10(target[ext.index].frequencyHz)
-            let tooClose = selectedIndices.contains { idx in
-                abs(log10(target[idx].frequencyHz) - logFreq) < minLogSpacing
-            }
-            if !tooClose {
-                selectedIndices.append(ext.index)
-            }
-            if selectedIndices.count >= count { break }
-        }
-
-        // If we don't have enough extrema, distribute remaining bands evenly
-        if selectedIndices.count < count {
-            let remaining = count - selectedIndices.count
-            let logMin = log10(target.first!.frequencyHz)
-            let logMax = log10(target.last!.frequencyHz)
-
-            for i in 0..<remaining {
-                let t = Double(i + 1) / Double(remaining + 1)
-                let logFreq = logMin + t * (logMax - logMin)
-                let freq = pow(10, logFreq)
-
-                // Find closest point
-                if let closest = target.enumerated().min(by: {
-                    abs($0.element.frequencyHz - freq) < abs($1.element.frequencyHz - freq)
-                }) {
-                    if !selectedIndices.contains(closest.offset) {
-                        selectedIndices.append(closest.offset)
+                for i in 0..<remaining {
+                    let t = Double(i + 1) / Double(remaining + 1)
+                    let freq = pow(10, logMin + t * (logMax - logMin))
+                    let minDist = freqs.map { abs(log10($0) - log10(freq)) }.min() ?? 1.0
+                    if minDist > 0.05 {
+                        freqs.append(freq)
                     }
                 }
             }
+
+            candidateFreqs = Array(freqs.prefix(count)).sorted()
         }
 
-        // Create bands from selected points
-        return selectedIndices.map { idx in
-            let point = target[idx]
-            let gain = min(max(point.decibelSPL, -maxGainDB), maxGainDB)
+        return candidateFreqs.map { freq in
+            let gain = interpolateTarget(at: freq, in: target)
+            let clampedGain = min(max(gain, -maxGainDB), maxGainDB)
             return EQBand(
-                frequencyHz: point.frequencyHz,
-                gainDB: gain,
+                frequencyHz: freq,
+                gainDB: clampedGain,
                 q: 1.41,
                 filterType: .peak
             )
         }
+    }
+
+    /// Interpolate target curve value at a given frequency
+    private func interpolateTarget(at freq: Double, in target: [FRPoint]) -> Double {
+        guard let first = target.first, let last = target.last else { return 0 }
+        if freq <= first.frequencyHz { return first.decibelSPL }
+        if freq >= last.frequencyHz { return last.decibelSPL }
+
+        let logFreq = log10(freq)
+        for i in 0..<(target.count - 1) {
+            let p0 = target[i]
+            let p1 = target[i + 1]
+            if freq >= p0.frequencyHz && freq <= p1.frequencyHz {
+                let logF0 = log10(p0.frequencyHz)
+                let logF1 = log10(p1.frequencyHz)
+                let t = (logFreq - logF0) / (logF1 - logF0)
+                return p0.decibelSPL + t * (p1.decibelSPL - p0.decibelSPL)
+            }
+        }
+        return last.decibelSPL
     }
 
     /// Refine band parameters to reduce error against target

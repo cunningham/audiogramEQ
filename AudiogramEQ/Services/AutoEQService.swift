@@ -12,7 +12,7 @@ final class AutoEQService {
     var errorMessage: String?
     var searchResults: [AutoEQEntry] = []
 
-    private let baseRawURL = "https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/results"
+    private let baseRawURL = "https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/measurements"
     private let apiBaseURL = "https://api.github.com/repos/jaakkopasanen/AutoEq"
 
     struct AutoEQEntry: Identifiable, Hashable, Sendable {
@@ -20,68 +20,90 @@ final class AutoEQService {
         let name: String
         let path: String
         let source: String
+        let category: String
 
         var displayName: String { name }
         var attribution: String { "Data from AutoEQ by Jaakko Pasanen (MIT License)" }
     }
 
     /// Fetch the index of available headphone measurements from the AutoEQ repo.
-    /// Uses the GitHub API to list directories under results/.
+    /// Uses the GitHub API to list files under measurements/.
     func fetchIndex() async {
         guard !isLoading else { return }
         isLoading = true
         errorMessage = nil
 
         do {
-            // Use the GitHub Trees API for efficient directory listing
-            let treeURL = URL(string: "\(apiBaseURL)/git/trees/master?recursive=1")!
-            var request = URLRequest(url: treeURL)
-            request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-            request.timeoutInterval = 30
+            // Step 1: Get the SHA of the measurements directory from the top-level tree
+            let topTreeURL = URL(string: "\(apiBaseURL)/git/trees/master")!
+            var topRequest = URLRequest(url: topTreeURL)
+            topRequest.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+            topRequest.timeoutInterval = 30
 
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                throw AutoEQError.apiError("GitHub API returned non-200 status")
+            let (topData, topResponse) = try await URLSession.shared.data(for: topRequest)
+            guard let topHTTP = topResponse as? HTTPURLResponse, topHTTP.statusCode == 200 else {
+                throw AutoEQError.apiError("GitHub API returned non-200 status for top-level tree")
             }
 
-            let tree = try JSONDecoder().decode(GitHubTree.self, from: data)
+            let topTree = try JSONDecoder().decode(GitHubTree.self, from: topData)
+            guard let measurementsEntry = topTree.tree.first(where: { $0.path == "measurements" && $0.type == "tree" }) else {
+                throw AutoEQError.apiError("Could not find measurements directory in repository")
+            }
 
-            // Find all ParametricEQ.txt files — these are the usable EQ files
-            // Also find raw FR CSV files
+            // Step 2: Fetch the measurements subtree recursively
+            let measURL = URL(string: "\(apiBaseURL)/git/trees/\(measurementsEntry.sha)?recursive=1")!
+            var measRequest = URLRequest(url: measURL)
+            measRequest.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+            measRequest.timeoutInterval = 60
+
+            let (measData, measResponse) = try await URLSession.shared.data(for: measRequest)
+            guard let measHTTP = measResponse as? HTTPURLResponse, measHTTP.statusCode == 200 else {
+                throw AutoEQError.apiError("GitHub API returned non-200 status for measurements tree")
+            }
+
+            let measTree = try JSONDecoder().decode(GitHubTree.self, from: measData)
+
+            // Find all .csv and .txt measurement files
+            // Structure: <source>/data/<type>/<rig>/<headphone name>.<ext>
             var entries: [AutoEQEntry] = []
             let seen = NSMutableSet()
 
-            for item in tree.tree {
-                // Look for frequency response CSV files in results/
-                guard item.path.hasPrefix("results/") else { continue }
+            for item in measTree.tree {
                 guard item.type == "blob" else { continue }
 
-                let pathComponents = item.path.components(separatedBy: "/")
-                // Typical structure: results/<source>/<headphone name>/<headphone name>.csv
-                guard pathComponents.count >= 3 else { continue }
-
                 let isCSV = item.path.hasSuffix(".csv")
+                let isTXT = item.path.hasSuffix(".txt")
+                guard isCSV || isTXT else { continue }
 
-                if isCSV {
-                    let source = pathComponents[1]
-                    let headphoneName: String
-                    if pathComponents.count >= 4 {
-                        headphoneName = pathComponents[2]
-                    } else {
-                        headphoneName = pathComponents.last!.replacingOccurrences(of: ".csv", with: "")
-                    }
+                let pathComponents = item.path.components(separatedBy: "/")
+                // Expected: <source>/data/<type>/<rig>/<name>.ext (5 components)
+                // or: <source>/data/<type>/<name>.ext (4 components)
+                // or: <source>/<name>.ext (2 components)
+                guard pathComponents.count >= 2 else { continue }
 
-                    let entryID = "\(source)/\(headphoneName)"
-                    if !seen.contains(entryID) {
-                        seen.add(entryID)
-                        entries.append(AutoEQEntry(
-                            id: entryID,
-                            name: headphoneName,
-                            path: item.path,
-                            source: source
-                        ))
-                    }
+                let source = pathComponents[0]
+                let fileName = pathComponents.last!
+                let ext = isCSV ? ".csv" : ".txt"
+                let headphoneName = String(fileName.dropLast(ext.count))
+
+                // Determine category (type) if available
+                let category: String
+                if pathComponents.count >= 4, pathComponents[1] == "data" {
+                    category = pathComponents[2] // e.g. "over-ear", "in-ear", "earbud"
+                } else {
+                    category = ""
+                }
+
+                let entryID = "\(source)/\(headphoneName)"
+                if !seen.contains(entryID) {
+                    seen.add(entryID)
+                    entries.append(AutoEQEntry(
+                        id: entryID,
+                        name: headphoneName,
+                        path: "measurements/\(item.path)",
+                        source: source,
+                        category: category
+                    ))
                 }
             }
 

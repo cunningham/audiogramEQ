@@ -21,6 +21,7 @@ struct AudiogramEQApp: App {
                 }
         }
         .defaultSize(width: 1100, height: 750)
+        .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) {}
 

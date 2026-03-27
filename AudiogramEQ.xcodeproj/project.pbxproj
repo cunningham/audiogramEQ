@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F1E2D3C4B5A64789ABCDEF02 /* AutoEQService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789ABCDEF01 /* AutoEQService.swift */; };
+		C3D4E5F6789012ABCDEF0304 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012ABCDEF03 /* OnboardingView.swift */; };
 		66D984B7A3874A82A086BD8B /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93AE47926E34BE3AF3CEA0F /* AppState.swift */; };
 		2BC6344515EE4D0B84A5FC4E /* AudiogramEQApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90A60A60ECC4F5E82A5F0D7 /* AudiogramEQApp.swift */; };
 		6144807DB8504DA2B916F953 /* Audiogram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63015D73AF834E6EB06CC80B /* Audiogram.swift */; };
@@ -44,6 +46,8 @@
 		7A9BC75413C54FB1BE73617A /* EQProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EQProfile.swift"; sourceTree = "<group>"; };
 		D03615A4AD4D496EB0C6D3CA /* FrequencyResponseCurve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FrequencyResponseCurve.swift"; sourceTree = "<group>"; };
 		0175553ED94549ABA5AA95AC /* AudiogramOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudiogramOCRService.swift"; sourceTree = "<group>"; };
+		A1B2C3D4E5F64789ABCDEF01 /* AutoEQService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoEQService.swift"; sourceTree = "<group>"; };
+		B2C3D4E5F6789012ABCDEF03 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView.swift"; sourceTree = "<group>"; };
 		2279F002167746C397100B1A /* DeviceResponseParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceResponseParser.swift"; sourceTree = "<group>"; };
 		7B6E99682F244E2B8770ED8C /* EQCurveCombiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EQCurveCombiner.swift"; sourceTree = "<group>"; };
 		4F8383BE6CF74F9584FF5560 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExportService.swift"; sourceTree = "<group>"; };
@@ -125,6 +129,7 @@
 				AB4999F3B3EB4E49BBBE5061 /* ContentView.swift */,
 				BAF044F8BFA74BD8B6815E0C /* DeviceResponseView.swift */,
 				24DCE5A179B546CE84DBD48E /* ManualInputView.swift */,
+				B2C3D4E5F6789012ABCDEF03 /* OnboardingView.swift */,
 				A6DA24B602EE435D8C5AB819 /* SettingsView.swift */,
 				CB265ABEC6804F0387D4B26C /* SidebarView.swift */,
 				794609DE3C5746CE91888CAD /* Components */,
@@ -163,6 +168,7 @@
 			isa = PBXGroup;
 			children = (
 				0175553ED94549ABA5AA95AC /* AudiogramOCRService.swift */,
+				A1B2C3D4E5F64789ABCDEF01 /* AutoEQService.swift */,
 				2279F002167746C397100B1A /* DeviceResponseParser.swift */,
 				7B6E99682F244E2B8770ED8C /* EQCurveCombiner.swift */,
 				4F8383BE6CF74F9584FF5560 /* ExportService.swift */,
@@ -258,6 +264,7 @@
 				297F4C1EADDB4EDABA08155D /* EQProfile.swift in Sources */,
 				617D2E0EC62D474E9D5DD685 /* FrequencyResponseCurve.swift in Sources */,
 				863CCD738B874F3B9AD6FD93 /* AudiogramOCRService.swift in Sources */,
+				F1E2D3C4B5A64789ABCDEF02 /* AutoEQService.swift in Sources */,
 				FCBD3AE437404E1DAD10F156 /* DeviceResponseParser.swift in Sources */,
 				9E9A5CC122E248DA97F6A4E4 /* EQCurveCombiner.swift in Sources */,
 				CEDE89E7407A43A79BB8B405 /* ExportService.swift in Sources */,
@@ -271,6 +278,7 @@
 				47A1BA08D4FA42FCBC678CB6 /* DeviceResponseView.swift in Sources */,
 				F14A9F35392942A3BDCF2209 /* ImportAudiogramView.swift in Sources */,
 				2D07C950067E4FFB825362CB /* ManualInputView.swift in Sources */,
+				C3D4E5F6789012ABCDEF0304 /* OnboardingView.swift in Sources */,
 				ED537EE322234B3091191895 /* EQResultsView.swift in Sources */,
 				CBE8281B9C1E47A6B08B5431 /* PresetManagementView.swift in Sources */,
 				F36F84BF355746F5A9CEB4CE /* SettingsView.swift in Sources */,

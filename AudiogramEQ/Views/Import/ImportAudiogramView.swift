@@ -90,7 +90,7 @@ struct ImportAudiogramView: View {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: 500, maxHeight: 400)
+                    .frame(maxHeight: 400)
                     .border(.secondary.opacity(0.3))
             }
 
@@ -336,16 +336,25 @@ struct AudiogramImageOverlayView: View {
             instructionBar
 
             GeometryReader { geometry in
+                let imageAspect = image.size.width / image.size.height
+                let containerAspect = geometry.size.width / geometry.size.height
+                let fittedSize: CGSize = {
+                    if imageAspect > containerAspect {
+                        let w = geometry.size.width
+                        return CGSize(width: w, height: w / imageAspect)
+                    } else {
+                        let h = geometry.size.height
+                        return CGSize(width: h * imageAspect, height: h)
+                    }
+                }()
+                let offsetX = (geometry.size.width - fittedSize.width) / 2
+                let offsetY = (geometry.size.height - fittedSize.height) / 2
+
                 ZStack(alignment: .topLeading) {
-                    // Background image
+                    // Background image — fixed size, no re-layout
                     Image(nsImage: image)
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .background(GeometryReader { imgGeo in
-                            Color.clear.onAppear {
-                                imageSize = imgGeo.size
-                            }
-                        })
+                        .frame(width: fittedSize.width, height: fittedSize.height)
 
                     // Calibration anchors
                     if let tl = topLeftAnchor {
@@ -357,7 +366,7 @@ struct AudiogramImageOverlayView: View {
 
                     // Grid overlay (after calibration)
                     if calibrationStep == .placing, let tl = topLeftAnchor, let br = bottomRightAnchor {
-                        gridOverlay(topLeft: tl, bottomRight: br, in: geometry.size)
+                        gridOverlay(topLeft: tl, bottomRight: br, in: fittedSize)
                     }
 
                     // Placed data points
@@ -375,8 +384,10 @@ struct AudiogramImageOverlayView: View {
                             handleTap(at: location)
                         }
                 }
+                .frame(width: fittedSize.width, height: fittedSize.height)
+                .offset(x: offsetX, y: offsetY)
             }
-            .frame(maxHeight: 500)
+            .frame(maxHeight: .infinity)
             .border(Color.secondary.opacity(0.3))
 
             if calibrationStep == .placing {

@@ -25,102 +25,76 @@ struct EQResultsView: View {
             }
 
             if let profile = appState.eqProfile {
-                HSplitView {
-                    // Left: EQ Curve visualization
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("EQ Curve")
-                            .font(.headline)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // EQ Curve visualization
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("EQ Curve")
+                                .font(.headline)
 
-                        EQCurveChartView(profile: profile)
-                            .frame(minHeight: 300)
+                            EQCurveChartView(
+                                profile: profile,
+                                audiogram: appState.audiogram,
+                                deviceResponse: appState.deviceResponse
+                            )
+                                .frame(minHeight: 250, idealHeight: 350)
 
-                        if profile.globalGainDB != 0 {
-                            Text(String(format: "Pre-amp: %+.1f dB", profile.globalGainDB))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding()
-                    .frame(minWidth: 400)
-
-                    // Right: Band parameters
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Band Parameters")
-                            .font(.headline)
-
-                        Table(profile.bands.filter(\.isEnabled)) {
-                            TableColumn("#") { band in
-                                if let idx = profile.bands.firstIndex(where: { $0.id == band.id }) {
-                                    Text("\(idx + 1)")
-                                        .monospacedDigit()
-                                }
-                            }
-                            .width(30)
-
-                            TableColumn("Type") { band in
-                                Text(band.filterType.rawValue)
+                            if profile.globalGainDB != 0 {
+                                Text(String(format: "Pre-amp: %+.1f dB", profile.globalGainDB))
                                     .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
-                            .width(70)
-
-                            TableColumn("Freq (Hz)") { band in
-                                Text(formatFrequency(band.frequencyHz))
-                                    .monospacedDigit()
-                            }
-                            .width(80)
-
-                            TableColumn("Gain (dB)") { band in
-                                Text(String(format: "%+.1f", band.gainDB))
-                                    .monospacedDigit()
-                                    .foregroundStyle(band.gainDB >= 0 ? .green : .red)
-                            }
-                            .width(80)
-
-                            TableColumn("Q") { band in
-                                Text(String(format: "%.2f", band.q))
-                                    .monospacedDigit()
-                            }
-                            .width(60)
                         }
-                        .frame(minHeight: 200)
 
                         Divider()
 
-                        // Export controls
-                        HStack {
-                            Picker("Format", selection: $exportFormat) {
-                                ForEach(ExportFormat.allCases) { format in
-                                    Text(format.rawValue).tag(format)
+                        // Band parameters
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Band Parameters")
+                                .font(.headline)
+
+                            bandParameterGrid(profile: profile)
+
+                            Divider()
+
+                            // Export controls
+                            HStack {
+                                Picker("Format", selection: $exportFormat) {
+                                    ForEach(ExportFormat.allCases) { format in
+                                        Text(format.rawValue).tag(format)
+                                    }
+                                }
+                                .frame(maxWidth: 200)
+
+                                Button("Copy to Clipboard") {
+                                    copyToClipboard()
+                                }
+
+                                Button("Export File…") {
+                                    if let profile = appState.eqProfile {
+                                        exportText = ExportService().export(profile, format: exportFormat)
+                                    }
+                                    showingExport = true
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+
+                            // Save as preset
+                            HStack {
+                                Button("Save as Preset…") {
+                                    savePreset()
                                 }
                             }
-                            .frame(maxWidth: 200)
 
-                            Button("Copy to Clipboard") {
-                                copyToClipboard()
+                            if showCopiedToast {
+                                Text("✓ Copied to clipboard")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                                    .transition(.opacity)
                             }
-
-                            Button("Export File…") {
-                                showingExport = true
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
-
-                        // Save as preset
-                        HStack {
-                            Button("Save as Preset…") {
-                                savePreset()
-                            }
-                        }
-
-                        if showCopiedToast {
-                            Text("✓ Copied to clipboard")
-                                .font(.caption)
-                                .foregroundStyle(.green)
-                                .transition(.opacity)
                         }
                     }
                     .padding()
-                    .frame(minWidth: 350)
                 }
             } else {
                 ContentUnavailableView {
@@ -172,7 +146,8 @@ struct EQResultsView: View {
         appState.eqProfile = fitter.fit(
             targetCurve: combinedCurve,
             bandCount: appState.numberOfEQBands,
-            maxGainDB: appState.maxGainDB
+            maxGainDB: appState.maxGainDB,
+            hasDeviceResponse: appState.deviceResponse != nil
         )
     }
 
@@ -209,68 +184,143 @@ struct EQResultsView: View {
         }
         return String(format: "%.0f", freq)
     }
+
+    @ViewBuilder
+    private func bandParameterGrid(profile: EQProfile) -> some View {
+        let enabledBands = profile.bands.filter(\.isEnabled)
+        Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 6) {
+            // Header
+            GridRow {
+                Text("#").fontWeight(.semibold)
+                Text("Type").fontWeight(.semibold)
+                Text("Freq").fontWeight(.semibold)
+                Text("Gain").fontWeight(.semibold)
+                Text("Q").fontWeight(.semibold)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Divider()
+                .gridCellUnsizedAxes(.horizontal)
+
+            ForEach(Array(enabledBands.enumerated()), id: \.element.id) { idx, band in
+                GridRow {
+                    Text("\(idx + 1)")
+                        .monospacedDigit()
+                    Text(band.filterType.rawValue)
+                        .font(.caption)
+                    Text(formatFrequency(band.frequencyHz))
+                        .monospacedDigit()
+                    Text(String(format: "%+.1f dB", band.gainDB))
+                        .monospacedDigit()
+                        .foregroundStyle(band.gainDB >= 0 ? .green : .red)
+                    Text(String(format: "%.2f", band.q))
+                        .monospacedDigit()
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 }
 
 struct EQCurveChartView: View {
     let profile: EQProfile
+    var audiogram: Audiogram? = nil
+    var deviceResponse: FrequencyResponseCurve? = nil
+
+    private let audiogramLogTicks: [Double] = AudiometricFrequency.allCases.map { log10($0.rawValue) }
 
     var body: some View {
         let curvePoints = profile.evaluateCurve()
+        let compensation = HearingCompensationService()
 
-        Chart {
-            // EQ curve
-            ForEach(curvePoints) { point in
-                LineMark(
-                    x: .value("Frequency", log10(point.frequencyHz)),
-                    y: .value("Gain (dB)", point.decibelSPL)
-                )
-                .foregroundStyle(.blue)
-                .lineStyle(StrokeStyle(lineWidth: 2))
+        VStack(alignment: .leading, spacing: 8) {
+            Chart {
+                // Audiogram hearing compensation curve
+                if let audiogram = audiogram {
+                    let targetCurve = compensation.computeTargetGainCurve(from: audiogram)
+                    let smoothCurve = compensation.interpolateGainCurve(targetCurve)
+                    ForEach(smoothCurve) { point in
+                        LineMark(
+                            x: .value("Frequency", log10(point.frequencyHz)),
+                            y: .value("Gain (dB)", point.decibelSPL)
+                        )
+                        .foregroundStyle(by: .value("Series", "Audiogram Compensation"))
+                    }
+                }
+
+                // Headphone response deviation
+                if let deviceResponse = deviceResponse {
+                    let deviation = deviceResponse.deviationFromFlat()
+                    ForEach(deviation) { point in
+                        LineMark(
+                            x: .value("Frequency", log10(point.frequencyHz)),
+                            y: .value("Gain (dB)", point.decibelSPL)
+                        )
+                        .foregroundStyle(by: .value("Series", "Headphone Response"))
+                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                    }
+                }
+
+                // Final EQ curve
+                ForEach(curvePoints) { point in
+                    LineMark(
+                        x: .value("Frequency", log10(point.frequencyHz)),
+                        y: .value("Gain (dB)", point.decibelSPL)
+                    )
+                    .foregroundStyle(by: .value("Series", "EQ Curve"))
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                }
+
+                // Zero reference line
+                RuleMark(y: .value("Reference", 0))
+                    .foregroundStyle(.gray.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+
+                // Band markers
+                ForEach(profile.bands.filter(\.isEnabled)) { band in
+                    PointMark(
+                        x: .value("Frequency", log10(band.frequencyHz)),
+                        y: .value("Gain (dB)", band.gainDB)
+                    )
+                    .foregroundStyle(band.gainDB >= 0 ? .green : .red)
+                    .symbolSize(50)
+                }
             }
-
-            // Zero reference line
-            RuleMark(y: .value("Reference", 0))
-                .foregroundStyle(.gray.opacity(0.5))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
-
-            // Band markers
-            ForEach(profile.bands.filter(\.isEnabled)) { band in
-                PointMark(
-                    x: .value("Frequency", log10(band.frequencyHz)),
-                    y: .value("Gain (dB)", band.gainDB)
-                )
-                .foregroundStyle(band.gainDB >= 0 ? .green : .red)
-                .symbolSize(50)
-            }
-        }
-        .chartXAxis {
-            let logTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].map { log10(Double($0)) }
-            AxisMarks(values: logTicks) { value in
-                AxisGridLine()
-                AxisValueLabel {
-                    if let logVal = value.as(Double.self) {
-                        let freq = Int(pow(10, logVal))
-                        Text(freq >= 1000 ? "\(freq/1000)k" : "\(freq)")
-                            .font(.caption2)
+            .chartForegroundStyleScale([
+                "Audiogram Compensation": Color.purple,
+                "Headphone Response": Color.orange,
+                "EQ Curve": Color.blue
+            ])
+            .chartLegend(position: .bottom, alignment: .center, spacing: 12)
+            .chartXAxis {
+                AxisMarks(values: audiogramLogTicks) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let logVal = value.as(Double.self) {
+                            let freq = Int(pow(10, logVal))
+                            Text(freq >= 1000 ? "\(freq/1000)k" : "\(freq)")
+                                .font(.caption2)
+                        }
                     }
                 }
             }
-        }
-        .chartYAxis {
-            AxisMarks(position: .leading) { value in
-                AxisGridLine()
-                AxisValueLabel {
-                    if let db = value.as(Double.self) {
-                        Text(String(format: "%+.0f", db))
-                            .font(.caption2)
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let db = value.as(Double.self) {
+                            Text(String(format: "%+.0f", db))
+                                .font(.caption2)
+                        }
                     }
                 }
             }
-        }
-        .chartPlotStyle { plotArea in
-            plotArea
-                .background(.gray.opacity(0.05))
-                .border(.gray.opacity(0.2))
+            .chartPlotStyle { plotArea in
+                plotArea
+                    .background(.gray.opacity(0.05))
+                    .border(.gray.opacity(0.2))
+            }
         }
     }
 }

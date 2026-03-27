@@ -2,7 +2,9 @@ import Foundation
 import Vision
 import AppKit
 
-/// Service to extract audiogram threshold data from images using the Vision framework
+/// Service to extract audiogram threshold data from images using the Vision framework.
+/// Uses VNRecognizeTextRequest for text detection and spatial analysis to map
+/// detected axis labels and data values to audiometric thresholds.
 struct AudiogramOCRService {
 
     enum OCRError: LocalizedError {
@@ -27,191 +29,213 @@ struct AudiogramOCRService {
             throw OCRError.cgImageConversionFailed
         }
 
-        // Step 1: Run text recognition to find frequency and dB labels
-        let textResults = try await recognizeText(in: cgImage)
+        // Run text recognition with the modern async Vision API
+        let textObservations = try await performTextRecognition(on: cgImage)
 
-        // Step 2: Detect potential data point markers
-        let imageWidth = CGFloat(cgImage.width)
-        let imageHeight = CGFloat(cgImage.height)
-
-        // Step 3: Parse the detected text to find axis labels and values
-        let chartBounds = inferChartBounds(from: textResults, imageSize: CGSize(width: imageWidth, height: imageHeight))
-
-        // Step 4: Try to extract thresholds from text-based audiogram data
-        let thresholds = parseThresholdsFromText(textResults, chartBounds: chartBounds)
-
-        if thresholds.isEmpty {
-            // Fallback: try to extract from tabular data in the text
-            return try parseTabularAudiogramData(from: textResults)
+        guard !textObservations.isEmpty else {
+            throw OCRError.noTextFound
         }
 
-        return thresholds
+        // Parse recognized text with bounding boxes
+        let textItems = extractTextItems(from: textObservations)
+
+        // Try strategy 1: find tabular data (frequency row + value rows)
+        if let tabularResults = parseTabularLayout(textItems), tabularResults.count >= 3 {
+            return tabularResults
+        }
+
+        // Try strategy 2: find inline "freq: value" or "freq value" pairs
+        if let inlineResults = parseInlinePairs(textItems), inlineResults.count >= 3 {
+            return inlineResults
+        }
+
+        // Try strategy 3: spatial axis mapping (detect axis labels, map nearby values)
+        if let spatialResults = parseSpatialLayout(textItems), spatialResults.count >= 3 {
+            return spatialResults
+        }
+
+        throw OCRError.parsingFailed("Could not identify audiogram data in the image. Try manual point placement instead.")
     }
 
-    private func recognizeText(in cgImage: CGImage) async throws -> [(String, CGRect)] {
-        try await withCheckedThrowingContinuation { continuation in
-            let request = VNRecognizeTextRequest { request, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
+    // MARK: - Vision Text Recognition
 
-                guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                    continuation.resume(returning: [])
-                    return
-                }
+    private func performTextRecognition(on cgImage: CGImage) async throws -> [VNRecognizedTextObservation] {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = false
+        request.automaticallyDetectsLanguage = false
 
-                let results: [(String, CGRect)] = observations.compactMap { obs in
-                    guard let candidate = obs.topCandidates(1).first else { return nil }
-                    return (candidate.string, obs.boundingBox)
-                }
-                continuation.resume(returning: results)
-            }
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = false
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        try handler.perform([request])
 
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                continuation.resume(throwing: error)
-            }
+        return request.results ?? []
+    }
+
+    // MARK: - Text Item Extraction
+
+    private struct TextItem {
+        let text: String
+        let boundingBox: CGRect // normalized Vision coordinates (origin bottom-left)
+        var midX: CGFloat { boundingBox.midX }
+        var midY: CGFloat { boundingBox.midY }
+    }
+
+    private func extractTextItems(from observations: [VNRecognizedTextObservation]) -> [TextItem] {
+        observations.compactMap { obs in
+            guard let candidate = obs.topCandidates(1).first else { return nil }
+            return TextItem(text: candidate.string, boundingBox: obs.boundingBox)
         }
     }
 
-    private struct ChartBounds {
-        var minFreqX: CGFloat = 0
-        var maxFreqX: CGFloat = 1
-        var minDBY: CGFloat = 0
-        var maxDBY: CGFloat = 1
-        var minFreq: Double = 250
-        var maxFreq: Double = 8000
-        var minDB: Double = -10
-        var maxDB: Double = 120
-    }
+    // MARK: - Strategy 1: Tabular Layout
 
-    private func inferChartBounds(from texts: [(String, CGRect)], imageSize: CGSize) -> ChartBounds {
-        var bounds = ChartBounds()
-
-        // Look for frequency labels (250, 500, 1k, 2k, 4k, 8k)
-        let freqPatterns: [(String, Double)] = [
-            ("250", 250), ("500", 500), ("1000", 1000), ("1k", 1000),
-            ("2000", 2000), ("2k", 2000), ("4000", 4000), ("4k", 4000),
-            ("8000", 8000), ("8k", 8000)
+    private func parseTabularLayout(_ items: [TextItem]) -> [HearingThreshold]? {
+        let freqPatterns: [(String, AudiometricFrequency)] = [
+            ("250", .hz250), ("500", .hz500), ("1000", .hz1000), ("1k", .hz1000),
+            ("2000", .hz2000), ("2k", .hz2000), ("3000", .hz3000), ("3k", .hz3000),
+            ("4000", .hz4000), ("4k", .hz4000), ("6000", .hz6000), ("6k", .hz6000),
+            ("8000", .hz8000), ("8k", .hz8000)
         ]
 
-        var freqPositions: [(Double, CGFloat)] = []
-        var dbPositions: [(Double, CGFloat)] = []
-
-        for (text, rect) in texts {
-            let cleanText = text.trimmingCharacters(in: .whitespaces).lowercased()
-
-            // Check frequency labels
+        // Find frequency labels and their X positions
+        var freqColumns: [(freq: AudiometricFrequency, x: CGFloat)] = []
+        for item in items {
+            let cleaned = item.text.trimmingCharacters(in: .whitespaces).lowercased()
+                .replacingOccurrences(of: ",", with: "")
             for (pattern, freq) in freqPatterns {
-                if cleanText == pattern.lowercased() {
-                    freqPositions.append((freq, rect.midX))
+                if cleaned == pattern.lowercased() && !freqColumns.contains(where: { $0.freq == freq }) {
+                    freqColumns.append((freq, item.midX))
+                    break
+                }
+            }
+        }
+
+        guard freqColumns.count >= 3 else { return nil }
+        freqColumns.sort { $0.x < $1.x }
+
+        // Find numeric values that are below the frequency header row and align with columns
+        let freqRowY = freqColumns.map(\.x).isEmpty ? CGFloat(0) :
+            items.filter { item in
+                freqColumns.contains { abs($0.x - item.midX) < 0.03 }
+            }.map(\.midY).max() ?? 0
+
+        // Look for dB values in rows below the frequency labels
+        var thresholds: [HearingThreshold] = []
+        let columnTolerance: CGFloat = 0.04
+
+        for item in items {
+            guard item.midY < freqRowY - 0.01 else { continue } // below in Vision coords (Y flipped)
+            let cleaned = item.text.trimmingCharacters(in: .whitespaces)
+            guard let dbValue = Double(cleaned), dbValue >= -10, dbValue <= 120 else { continue }
+
+            // Find which frequency column this aligns with
+            if let match = freqColumns.min(by: { abs($0.x - item.midX) < abs($1.x - item.midX) }),
+               abs(match.x - item.midX) < columnTolerance {
+                if !thresholds.contains(where: { $0.frequency == match.freq }) {
+                    thresholds.append(HearingThreshold(frequency: match.freq, thresholdDBHL: dbValue))
+                }
+            }
+        }
+
+        return thresholds.isEmpty ? nil : thresholds.sorted { $0.frequency < $1.frequency }
+    }
+
+    // MARK: - Strategy 2: Inline Pairs
+
+    private func parseInlinePairs(_ items: [TextItem]) -> [HearingThreshold]? {
+        var thresholds: [HearingThreshold] = []
+        let allFreqs = AudiometricFrequency.allCases
+
+        for item in items {
+            let components = item.text.components(separatedBy: CharacterSet(charactersIn: ":=, \t"))
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+
+            guard components.count >= 2 else { continue }
+
+            for freq in allFreqs {
+                let freqStr = String(Int(freq.rawValue))
+                let freqKStr = freq.displayLabel.lowercased()
+
+                if components[0].lowercased() == freqStr || components[0].lowercased() == freqKStr {
+                    if let dbValue = Double(components[1]), dbValue >= -10, dbValue <= 120 {
+                        thresholds.append(HearingThreshold(frequency: freq, thresholdDBHL: dbValue))
+                    }
+                }
+            }
+        }
+
+        return thresholds.isEmpty ? nil : thresholds.sorted { $0.frequency < $1.frequency }
+    }
+
+    // MARK: - Strategy 3: Spatial Axis Mapping
+
+    private func parseSpatialLayout(_ items: [TextItem]) -> [HearingThreshold]? {
+        // Find dB labels on the Y axis (left side, small X values)
+        var dbAnchors: [(db: Double, y: CGFloat)] = []
+        var freqAnchors: [(freq: AudiometricFrequency, x: CGFloat)] = []
+
+        let freqPatterns: [(String, AudiometricFrequency)] = [
+            ("250", .hz250), ("500", .hz500), ("1000", .hz1000), ("1k", .hz1000),
+            ("2000", .hz2000), ("2k", .hz2000), ("3000", .hz3000), ("3k", .hz3000),
+            ("4000", .hz4000), ("4k", .hz4000), ("6000", .hz6000), ("6k", .hz6000),
+            ("8000", .hz8000), ("8k", .hz8000)
+        ]
+
+        for item in items {
+            let cleaned = item.text.trimmingCharacters(in: .whitespaces).lowercased()
+                .replacingOccurrences(of: ",", with: "")
+
+            // Frequency labels (typically along the top or bottom)
+            for (pattern, freq) in freqPatterns {
+                if cleaned == pattern.lowercased() && !freqAnchors.contains(where: { $0.freq == freq }) {
+                    freqAnchors.append((freq, item.midX))
+                    break
                 }
             }
 
-            // Check dB labels (numbers 0-120 typically on the Y axis)
-            if let dbValue = Double(cleanText), dbValue >= -10, dbValue <= 120, dbValue.truncatingRemainder(dividingBy: 10) == 0 {
-                dbPositions.append((dbValue, rect.midY))
+            // dB labels (typically along the left side)
+            if let dbValue = Double(cleaned), dbValue >= -10, dbValue <= 120,
+               dbValue.truncatingRemainder(dividingBy: 10) == 0, item.midX < 0.2 {
+                dbAnchors.append((dbValue, item.midY))
             }
         }
 
-        // Update bounds based on detected labels
-        if let minFreqPos = freqPositions.min(by: { $0.1 < $1.1 }),
-           let maxFreqPos = freqPositions.max(by: { $0.1 < $1.1 }) {
-            bounds.minFreqX = minFreqPos.1
-            bounds.maxFreqX = maxFreqPos.1
-            bounds.minFreq = minFreqPos.0
-            bounds.maxFreq = maxFreqPos.0
-        }
+        guard freqAnchors.count >= 3, dbAnchors.count >= 2 else { return nil }
 
-        if let minDBPos = dbPositions.min(by: { $0.1 < $1.1 }),
-           let maxDBPos = dbPositions.max(by: { $0.1 < $1.1 }) {
-            bounds.minDBY = minDBPos.1
-            bounds.maxDBY = maxDBPos.1
-            bounds.minDB = minDBPos.0
-            bounds.maxDB = maxDBPos.0
-        }
+        // Build coordinate mapping from anchor positions
+        dbAnchors.sort { $0.y < $1.y }
+        freqAnchors.sort { $0.x < $1.x }
 
-        return bounds
-    }
+        // In Vision coordinates, Y=0 is bottom, Y=1 is top
+        // Audiogram: top = low dB (good hearing), bottom = high dB (hearing loss)
+        // So higher Y in Vision = lower dB value
+        let dbByY = dbAnchors.sorted { $0.y > $1.y } // highest Y first = lowest dB
 
-    private func parseThresholdsFromText(_ texts: [(String, CGRect)], chartBounds: ChartBounds) -> [HearingThreshold] {
-        // This attempts to detect plotted points based on text annotations
-        // Many audiograms have numerical values near the plotted points
+        // Find numeric values that could be threshold annotations inside the chart area
+        let chartMinX = (freqAnchors.first?.x ?? 0) - 0.02
+        let chartMaxX = (freqAnchors.last?.x ?? 1) + 0.02
+        let chartMinY = (dbAnchors.first?.y ?? 0) - 0.02
+        let chartMaxY = (dbAnchors.last?.y ?? 1) + 0.02
+
         var thresholds: [HearingThreshold] = []
 
-        let standardFreqs = AudiometricFrequency.allCases
+        for item in items {
+            guard item.midX >= chartMinX, item.midX <= chartMaxX,
+                  item.midY >= chartMinY, item.midY <= chartMaxY else { continue }
 
-        // Look for patterns like "250: 15" or frequency-value pairs
-        for freq in standardFreqs {
-            let freqStr = String(Int(freq.rawValue))
-            // Find nearby dB values for each frequency column
-            let freqTexts = texts.filter { text, rect in
-                text.contains(freqStr)
-            }
+            let cleaned = item.text.trimmingCharacters(in: .whitespaces)
+            guard let dbValue = Double(cleaned), dbValue >= -10, dbValue <= 120 else { continue }
 
-            for (text, _) in freqTexts {
-                // Try to parse "freq: value" or "freq value" patterns
-                let components = text.components(separatedBy: CharacterSet(charactersIn: ":, \t"))
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                    .filter { !$0.isEmpty }
-
-                if components.count >= 2,
-                   let dbValue = Double(components.last!) {
-                    thresholds.append(HearingThreshold(frequency: freq, thresholdDBHL: dbValue))
+            // Map X to nearest frequency
+            if let nearestFreq = freqAnchors.min(by: { abs($0.x - item.midX) < abs($1.x - item.midX) }),
+               abs(nearestFreq.x - item.midX) < 0.05 {
+                if !thresholds.contains(where: { $0.frequency == nearestFreq.freq }) {
+                    thresholds.append(HearingThreshold(frequency: nearestFreq.freq, thresholdDBHL: dbValue))
                 }
             }
         }
 
-        return thresholds
-    }
-
-    private func parseTabularAudiogramData(from texts: [(String, CGRect)]) throws -> [HearingThreshold] {
-        // Try to find tabular data format where frequencies and values are listed
-        var allNumbers: [(Double, CGRect)] = []
-
-        for (text, rect) in texts {
-            let cleaned = text.trimmingCharacters(in: .whitespaces)
-            if let num = Double(cleaned) {
-                allNumbers.append((num, rect))
-            }
-        }
-
-        // Group by Y position (rows) with tolerance
-        let rowTolerance: CGFloat = 0.02
-        var rows: [[( Double, CGRect)]] = []
-
-        for item in allNumbers.sorted(by: { $0.1.midY > $1.1.midY }) {
-            if let rowIdx = rows.firstIndex(where: { row in
-                abs(row.first!.1.midY - item.1.midY) < rowTolerance
-            }) {
-                rows[rowIdx].append(item)
-            } else {
-                rows.append([item])
-            }
-        }
-
-        // Sort each row by X position
-        rows = rows.map { $0.sorted { $0.1.midX < $1.1.midX } }
-
-        // Try to match rows to frequency headers + values
-        let standardFreqValues = Set(AudiometricFrequency.allCases.map { $0.rawValue })
-
-        for row in rows {
-            let values = row.map { $0.0 }
-            // Check if this row contains frequency headers
-            let freqMatches = values.filter { standardFreqValues.contains($0) }
-            if freqMatches.count >= 4 {
-                // Next row might contain the threshold values
-                // This is a simplified heuristic
-                continue
-            }
-        }
-
-        throw OCRError.parsingFailed("Could not identify audiogram data in the image. Please use manual entry to verify the values.")
+        return thresholds.isEmpty ? nil : thresholds.sorted { $0.frequency < $1.frequency }
     }
 }

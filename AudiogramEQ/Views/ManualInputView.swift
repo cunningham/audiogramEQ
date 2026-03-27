@@ -7,76 +7,13 @@ struct ManualInputView: View {
     var body: some View {
         @Bindable var state = appState
 
-        HSplitView {
-            // Left panel: input form
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Manual Audiogram Entry")
-                    .font(.title2.bold())
+        HStack(spacing: 0) {
+            inputFormPanel
+                .frame(minWidth: 280, idealWidth: 380, maxWidth: 500)
+                .layoutPriority(1)
 
-                Picker("Ear", selection: $selectedEar) {
-                    ForEach(Ear.allCases) { ear in
-                        Text(ear.displayName).tag(ear)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 300)
+            Divider()
 
-                if appState.audiogram.leftEar.isEmpty {
-                    Button("Initialize with Normal Hearing") {
-                        appState.audiogram = .blank()
-                    }
-                    .buttonStyle(.borderedProminent)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            // Column headers
-                            HStack(spacing: 12) {
-                                Text("Freq")
-                                    .frame(width: 50, alignment: .trailing)
-                                Text("")
-                                    .frame(width: 24)
-                                Text("Threshold")
-                                    .frame(maxWidth: .infinity)
-                                Text("dB HL")
-                                    .frame(width: 65)
-                                Text("")
-                                    .frame(width: 50)
-                            }
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
-
-                            ForEach(AudiometricFrequency.allCases, id: \.self) { freq in
-                                FrequencyThresholdRow(
-                                    frequency: freq,
-                                    threshold: bindingForThreshold(frequency: freq),
-                                    ear: selectedEar
-                                )
-                            }
-                        }
-                        .padding()
-                    }
-                }
-
-                Spacer()
-
-                HStack {
-                    Button("Reset to Normal") {
-                        appState.audiogram = .normal
-                    }
-
-                    Spacer()
-
-                    Button("Generate EQ") {
-                        generateEQ()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!appState.hasAudiogramData)
-                }
-            }
-            .padding()
-            .frame(minWidth: 320, idealWidth: 420)
-
-            // Right panel: interactive audiogram chart
             AudiogramChartView(
                 audiogram: appState.audiogram,
                 interactiveEar: selectedEar,
@@ -85,8 +22,75 @@ struct ManualInputView: View {
                 }
             )
             .padding()
-            .frame(minWidth: 400)
+            .frame(minWidth: 250, maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    private var inputFormPanel: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Manual Audiogram Entry")
+                .font(.title2.bold())
+
+            Picker("Ear", selection: $selectedEar) {
+                ForEach(Ear.allCases) { ear in
+                    Text(ear.displayName).tag(ear)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 300)
+
+            if appState.audiogram.leftEar.isEmpty {
+                Button("Initialize with Normal Hearing") {
+                    appState.audiogram = .blank()
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                ScrollView {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 12) {
+                            Text("Freq")
+                                .frame(width: 50, alignment: .trailing)
+                            Text("")
+                                .frame(width: 24)
+                            Text("Threshold")
+                                .frame(maxWidth: .infinity)
+                            Text("dB HL")
+                                .frame(width: 65)
+                            Text("")
+                                .frame(width: 50)
+                        }
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
+                        ForEach(AudiometricFrequency.allCases, id: \.self) { freq in
+                            FrequencyThresholdRow(
+                                frequency: freq,
+                                threshold: bindingForThreshold(frequency: freq),
+                                ear: selectedEar
+                            )
+                        }
+                    }
+                    .padding()
+                }
+            }
+
+            Spacer()
+
+            HStack {
+                Button("Reset to Normal") {
+                    appState.audiogram = .normal
+                }
+
+                Spacer()
+
+                Button("Generate EQ") {
+                    generateEQ()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!appState.hasAudiogramData)
+            }
+        }
+        .padding()
     }
 
     private func plotPoint(frequency: AudiometricFrequency, dbHL: Double) {
@@ -146,7 +150,8 @@ struct ManualInputView: View {
         appState.eqProfile = fitter.fit(
             targetCurve: combinedCurve,
             bandCount: appState.numberOfEQBands,
-            maxGainDB: appState.maxGainDB
+            maxGainDB: appState.maxGainDB,
+            hasDeviceResponse: appState.deviceResponse != nil
         )
         appState.selectedNavItem = .results
     }
@@ -173,6 +178,7 @@ struct FrequencyThresholdRow: View {
                 Text(frequency.displayLabel)
             }
             .tint(ear == .left ? .blue : .red)
+            .focusable(false)
 
             // Direct text entry field
             TextField("dB", text: $textValue)
@@ -188,6 +194,7 @@ struct FrequencyThresholdRow: View {
 
             Stepper("", value: $threshold, in: -10...120, step: 5)
                 .labelsHidden()
+                .focusable(false)
         }
         .onAppear { textValue = formatDB(threshold) }
         .onChange(of: threshold) { _, newValue in

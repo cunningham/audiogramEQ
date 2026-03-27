@@ -6,7 +6,6 @@ struct DeviceResponseView: View {
     @Environment(AppState.self) private var appState
     @State private var isShowingFilePicker = false
     @State private var errorMessage: String?
-    @State private var deviceType: DeviceType = .headphone
     @State private var sourceTab: SourceTab = .autoEQ
 
     enum SourceTab: String, CaseIterable {
@@ -35,14 +34,6 @@ struct DeviceResponseView: View {
             if let response = appState.deviceResponse {
                 DeviceResponseLoadedView(response: response)
             } else {
-                Picker("Device Type", selection: $deviceType) {
-                    ForEach(DeviceType.allCases) { type in
-                        Text(type.rawValue).tag(type)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 400)
-
                 Picker("Source", selection: $sourceTab) {
                     ForEach(SourceTab.allCases, id: \.self) { tab in
                         Text(tab.rawValue).tag(tab)
@@ -53,7 +44,7 @@ struct DeviceResponseView: View {
 
                 switch sourceTab {
                 case .autoEQ:
-                    AutoEQBrowserView(deviceType: deviceType)
+                    AutoEQBrowserView()
                 case .localFile:
                     localFileImportView
                 }
@@ -104,7 +95,7 @@ struct DeviceResponseView: View {
 
             let parser = DeviceResponseParser()
             do {
-                appState.deviceResponse = try parser.parse(from: url, deviceType: deviceType)
+                appState.deviceResponse = try parser.parse(from: url)
             } catch {
                 errorMessage = "Import failed: \(error.localizedDescription)"
             }
@@ -163,7 +154,6 @@ struct AutoEQBrowserView: View {
     @State private var selectedEntry: AutoEQService.AutoEQEntry?
     @State private var isDownloading = false
     @State private var downloadError: String?
-    let deviceType: DeviceType
 
     var body: some View {
         VStack(spacing: 12) {
@@ -223,13 +213,19 @@ struct AutoEQBrowserView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(entry.name)
                                 .font(.body)
-                            Text(entry.source)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text(entry.source)
+                                if !entry.category.isEmpty {
+                                    Text("·")
+                                    Text(entry.category)
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
                         .tag(entry)
                     }
-                    .frame(minWidth: 300)
+                    .frame(minWidth: 200, maxWidth: .infinity)
 
                     // Detail / download pane
                     VStack(spacing: 16) {
@@ -268,7 +264,7 @@ struct AutoEQBrowserView: View {
                         }
                         Spacer()
                     }
-                    .frame(minWidth: 250)
+                    .frame(minWidth: 180, idealWidth: 250, maxWidth: .infinity)
                 }
 
                 Text("\(autoEQ.searchResults.count) of \(autoEQ.headphoneIndex.count) results")
@@ -290,8 +286,7 @@ struct AutoEQBrowserView: View {
 
         Task {
             do {
-                var curve = try await autoEQ.fetchFrequencyResponse(for: entry)
-                curve.deviceType = deviceType
+                let curve = try await autoEQ.fetchFrequencyResponse(for: entry)
                 appState.deviceResponse = curve
                 isDownloading = false
             } catch {
